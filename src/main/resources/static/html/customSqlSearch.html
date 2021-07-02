@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" style="width: 100%;height: 100%;">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="/css/bootstrap/bootstrap.css" rel="stylesheet">
+    <link href="/css/bootstrap-table/bootstrap-table.css" rel="stylesheet">
+    <link href="/css/codemirror/codemirror.css" rel="stylesheet">
+    <link href="/css/codemirror/dracula.css" rel="stylesheet">
+    <link href="/css/codemirror/show-hint.css" rel="stylesheet">
+    <link href="/css/codemirror/foldgutter.css" rel="stylesheet">
+    <link href="/css/json-viewer/jquery.jsonview.css" rel="stylesheet">
+    <script src="/js/jquery/jquery.js"></script>
+    <script src="/js/bootstrap/bootstrap.js"></script>
+    <script src="/js/bootstrap-table/bootstrap-table.js"></script>
+    <script src="/js/codemirror/codemirror.js"></script>
+    <script src="/js/codemirror/sql.js"></script>
+    <script src="/js/codemirror/show-hint.js"></script>
+    <script src="/js/codemirror/matchbrackets.js"></script>
+    <script src="/js/codemirror/active-line.js"></script>
+    <script src="/js/codemirror/comment.js"></script>
+    <script src="/js/codemirror/sql-hint.js"></script>
+    <script src="/js/sql-formatter/sql-formatter.js"></script>
+    <script src="/js/json-viewer/jquery.jsonview.js"></script>
+    <style>
+        .CodeMirror {
+            border: 0px;
+            height: 100%;
+            width: 100%;
+        }
+
+        button {
+            height: 43px;
+            min-width: 75px;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body style="width: 100%;height: 100%;margin: 0px;">
+<div class="bg-dark" style="height: 70px;border-top: 4px solid #282a36;display: flex;justify-content: flex-start;align-items: center;">
+    <button class="btn text-light btn-success" id="run">运行</button>
+    <button class="btn text-light btn-success" id="runSelect">运行已选择</button>
+    <button class="btn text-light btn-danger" id="clearAllText">清空</button>
+    <button class="btn text-light btn-primary" id="btnFormatSQL">格式化sql</button>
+</div>
+<div style="display: flex;height: calc(100% - 70px);width: 100%">
+    <div style="flex: 1;height: 100%;background: lightgray">
+        <textarea id="sqlEditor">select * from WISVISION_RECEIVER_LOG</textarea>
+    </div>
+    <div class="bg-dark" style="flex: 1;height: 100%;overflow: scroll;border-top: 4px solid #282a36;color: white;font-size: 18px;font-weight: 700;" id="divJson"></div>
+</div>
+</body>
+<script>
+    $(function () {
+        $("#run").click(() => {
+            let lineCount = sqlEditor.lineCount();
+            let sqlTextArr = [];
+            for (let i = 0; i < lineCount; i++) {
+                //过滤掉注释的字符串
+                sqlTextArr.push(sqlEditor.getLine(i).replace(/--.*/, ''));
+            }
+            let sqlText = sqlTextArr.join(" ");
+
+            if (sqlText == '') {
+                alert("执行语句不能为空！");
+                return;
+            }
+
+            runSql(sqlText);
+        });
+        $("#runSelect").click(() => {
+            let sqlText = sqlEditor.getSelection().split("\n").map(e => e.replace(/--.*/, '')).join(' ');
+
+            if (sqlText == '') {
+                alert("执行语句不能为空！");
+                return;
+            }
+
+            runSql(sqlText);
+        });
+        $("#btnFormatSQL").click(formatSQL);
+        $("#clearAllText").click(() => {
+            sqlEditor.setValue("");
+        });
+
+
+        const sqlEditor = CodeMirror.fromTextArea(document.getElementById("sqlEditor"), {
+            mode: "text/x-sparksql", // spark sql模式
+            tabsize: 4,
+            styleActiveLine: true,
+            matchBrackets: true,
+            lineNumbers: true,  // 显示行号
+            lineWrapping: true,
+            theme: "dracula",
+            hintOptions: {
+                completeSingle: false,
+                tables: {}
+            },
+            extraKeys: {
+                "Tab": "autocomplete", // tab键自动补全
+                'Ctrl-Alt-L': formatSQL,  // Ctrl+F 实现格式化
+                'Ctrl-/': commentCode,
+            },
+        });
+        $.getJSON("/derby/allDBInfo", (data) => {
+            sqlEditor.setOption('hintOptions', {
+                completeSingle: false,
+                tables: data
+            });
+        });
+        sqlEditor.on('keyup', (cm, event) => {
+            if (event.keyCode >= 65 && event.keyCode <= 90) {
+                cm.showHint();
+            }
+        });
+
+        function runSql(sql) {
+            $.getJSON("/derby/doAnySQL", {sql}, data => {
+                $("#divJson").JSONView(data);
+            });
+        }
+
+        //注释代码函数
+        function commentCode() {
+            let selectInfos = sqlEditor.listSelections();
+            let maxLastLineNum = 0;
+            selectInfos.forEach(selectInfo => {
+                let headLineNum = Math.min(selectInfo.head.line, selectInfo.anchor.line);
+                let lastLineNum = Math.max(selectInfo.head.line, selectInfo.anchor.line);
+                maxLastLineNum = Math.max(maxLastLineNum, lastLineNum);
+
+                for (let i = headLineNum; i <= lastLineNum; i++) {
+                    let lineText = sqlEditor.getLine(i);
+                    let commentLineText = "";
+
+                    if (lineText.trim().startsWith("--")) {
+                        //取消注释
+                        commentLineText = lineText.trim().substr(2).trim();
+                    } else {
+                        //增加注释
+                        commentLineText = `-- ${lineText.trim()}`;
+                    }
+                    sqlEditor.replaceRange(commentLineText, {
+                        line: i,
+                        ch: 0
+                    }, {
+                        line: i,
+                        ch: lineText.length
+                    });
+                }
+            });
+            sqlEditor.setCursor({
+                line: maxLastLineNum + 1
+            });
+        }
+
+        function formatSQL() {
+            let originSQL = "";
+            originSQL = sqlEditor.getValue();
+            sqlEditor.setValue(sqlFormatter.format(originSQL));
+        }
+    });
+</script>
+</html>

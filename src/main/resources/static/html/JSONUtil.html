@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" style="width: 100%;height: 100%;">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="/css/bootstrap/bootstrap.css" rel="stylesheet">
+    <link href="/css/bootstrap-table/bootstrap-table.css" rel="stylesheet">
+    <link href="/css/json-viewer/jquery.jsonview.css" rel="stylesheet">
+    <script src="/js/jquery/jquery.js"></script>
+    <script src="/js/bootstrap/bootstrap.js"></script>
+    <script src="/js/json-viewer/jquery.jsonview.js"></script>
+    <style>
+        button {
+            height: 43px;
+            min-width: 75px;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body style="width: 100%;height: 100%;margin: 0px;">
+<div class="bg-dark" style="height: 70px;border-top: 4px solid #282a36;display: flex;justify-content: flex-start;align-items: center;">
+    <button class="btn text-light btn-primary" id="btnFormatJson">格式化Json</button>
+</div>
+<div class="bg-dark" style="height: calc(100% - 70px);width: 100%;display: flex;">
+    <textarea id="jsonView" style="flex:1;height: 100%;padding: 0px;margin: 0px;border: 0px;resize: none;outline: none;overflow: scroll;border-top: 4px solid #282a36;color: white;font-size: 18px;font-weight: 700;" class="bg-dark"></textarea>
+    <div id="JSONViewer" style="flex:1;overflow: scroll;border-top: 4px solid #282a36;color: white;font-size: 18px;font-weight: 700;"></div>
+</div>
+<script>
+    $("#btnFormatJson").click(() => {
+        let text = $("#jsonView").val();
+        try {
+            text = JSON.parse(text);
+        } catch (err) {
+            try {
+                text = text.replaceAll("\\\"", "\"")
+                text = JSON.parse(text);
+            } catch (err) {
+                text = {
+                    "error": "JSON格式化异常，最外层请不要带入引号，直接使用JSON格式字符串内容"
+                }
+            }
+        }
+        $("#JSONViewer").JSONView(text);
+    });
+</script>
+</body>
+</html>
