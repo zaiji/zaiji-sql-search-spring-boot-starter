@@ -26,5 +26,13 @@ public enum Status {
     /**
      * 其他
      */
-    other
+    other;
+
+    public static Status getStatus(String status) {
+        try {
+            return Status.valueOf(status);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

@@ -123,7 +123,7 @@ public final class DBInit implements ApplicationRunner {
     /**
      * 初始化数据库，刷表
      */
-    private void initDB() {
+    private void initDB() throws Exception{
         log.info("首次启动服务，初始化数据库！");
         derbyDao.doAnySQL(createStartLogTableSql);
         derbyDao.doAnySQL(createReceiverLogTableSql);

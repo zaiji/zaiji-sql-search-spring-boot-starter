@@ -19,34 +19,6 @@
         <result column="OTHER_INFO" property="otherInfo" jdbcType="VARCHAR"></result>
     </resultMap>
 
-    <select id="getLastStartLog" resultMap="startLogResultMap">
-        select SERVICE_NAME, IP_PORT, START_TIME
-        from wisvision_start_log
-        order by start_time desc FETCH FIRST ROW ONLY
-    </select>
-
-    <select id="doAnySQL" resultType="java.util.Map">
-        ${sql}
-    </select>
-
-    <insert id="insertReceiverLog" parameterType="com.zaiji.starter.sql.entity.ReceiverLog">
-        insert into wisvision_receiver_log (receiver_time, processing_time, completion_time, receiver_status,
-                                            handle_status, data_source_type, data_source_info_json_text,
-                                            receiver_data_context,
-                                            handle_info,
-                                            other_info)
-        values (#{receiverLog.receiverTime,jdbcType=BIGINT},
-                #{receiverLog.processingTime,jdbcType=BIGINT},
-                #{receiverLog.completionTime,jdbcType=BIGINT},
-                #{receiverLog.receiverStatus,jdbcType=VARCHAR},
-                #{receiverLog.handleStatus,jdbcType=VARCHAR},
-                #{receiverLog.dataSourceType,jdbcType=VARCHAR},
-                #{receiverLog.dataSourceInfoJsonText,jdbcType=VARCHAR},
-                #{receiverLog.receiverDataContext,jdbcType=VARCHAR},
-                #{receiverLog.handleInfo,jdbcType=VARCHAR},
-                #{receiverLog.otherInfo,jdbcType=VARCHAR})
-    </insert>
-
     <select id="getReceiverLogs" resultMap="receiverLogResultMap">
         select receiver_time,
                processing_time,

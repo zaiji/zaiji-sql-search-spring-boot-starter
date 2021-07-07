@@ -1,7 +1,6 @@
 package com.zaiji.starter.sql.controller;
 
 import com.zaiji.starter.sql.dao.DerbyDao;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,7 +31,7 @@ public class DerbyController {
      * 获得所有数据库信息，表-字段
      */
     @GetMapping("allDBInfo")
-    public Map<String, List<String>> getAllDBInfo() {
+    public Map<String, List<String>> getAllDBInfo() throws Exception {
         final List<Map<String, Object>> maps = derbyDao.doAnySQL("SELECT\n" +
                 "t.tablename as stablename,c.columnname as scolumnname\n" +
                 "FROM sys.systables t , sys.syscolumns c, sys.sysschemas s\n" +
@@ -46,7 +45,6 @@ public class DerbyController {
     }
 
     @GetMapping("/doAnySQL")
-    @Transactional(rollbackFor = Exception.class)
     public List<Map<String, Object>> doAnySQL(String sql) throws Exception {
         final List<Map<String, Object>> maps = derbyDao.doAnySQL(sql);
 

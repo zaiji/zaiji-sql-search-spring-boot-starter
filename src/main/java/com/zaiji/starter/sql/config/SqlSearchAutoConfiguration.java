@@ -1,7 +1,6 @@
 package com.zaiji.starter.sql.config;
 
 import com.zaiji.starter.sql.properties.SqlSearchProperties;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -14,8 +13,6 @@ import java.util.Properties;
 @Configuration
 @ConditionalOnProperty(value = "zaiji.sql.search.enable", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(SqlSearchProperties.class)
-@ComponentScan(basePackages = {"com.zaiji.starter.sql"})
-@MapperScan(basePackages = {"com.zaiji.starter.sql"})
 public class SqlSearchAutoConfiguration {
 
     private final SqlSearchProperties sqlSearchProperties;
