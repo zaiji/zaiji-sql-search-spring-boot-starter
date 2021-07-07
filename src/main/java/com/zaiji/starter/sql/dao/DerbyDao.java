@@ -1,21 +1,12 @@
 package com.zaiji.starter.sql.dao;
 
-import com.sun.org.apache.bcel.internal.generic.Select;
 import com.zaiji.starter.sql.entity.DataSourceType;
 import com.zaiji.starter.sql.entity.ReceiverLog;
 import com.zaiji.starter.sql.entity.StartLog;
 import com.zaiji.starter.sql.entity.Status;
 import com.zaiji.starter.sql.properties.SqlSearchProperties;
-import lombok.extern.log4j.Log4j2;
-import org.apache.derby.jdbc.EmbeddedDataSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.DataSourceBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 

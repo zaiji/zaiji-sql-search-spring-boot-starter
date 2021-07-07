@@ -3,14 +3,7 @@ package com.zaiji.starter.sql.init;
 import com.zaiji.starter.sql.dao.DerbyDao;
 import com.zaiji.starter.sql.entity.StartLog;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.util.Objects;
