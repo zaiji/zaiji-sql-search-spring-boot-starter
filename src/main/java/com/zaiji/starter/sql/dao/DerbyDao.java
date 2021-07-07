@@ -26,8 +26,6 @@ import java.util.*;
  * @date 2021/06/18
  */
 
-@Log4j2
-@Component
 public class DerbyDao {
 
     private final SqlSearchProperties sqlSearchProperties;
@@ -107,7 +105,7 @@ public class DerbyDao {
 
                     Map<String, Object> map = new HashMap<>(columnCount / 3 * 4);
 
-                    for (int i = 0; i < columnCount; i++) {
+                    for (int i = 1; i <= columnCount; i++) {
                         final Object object = resultSet.getObject(i);
                         final String columnName = metaData.getColumnName(i);
                         map.put(columnName, object);
@@ -139,13 +137,14 @@ public class DerbyDao {
             preparedStatement.setLong(1, receiverLog.getReceiverTime());
             preparedStatement.setLong(2, receiverLog.getProcessingTime());
             preparedStatement.setLong(3, receiverLog.getCompletionTime());
-            preparedStatement.setString(4, receiverLog.getReceiverStatus().toString());
-            preparedStatement.setString(5, receiverLog.getHandleStatus().toString());
-            preparedStatement.setString(6, receiverLog.getDataSourceType().toString());
+            preparedStatement.setString(4, Objects.nonNull(receiverLog.getReceiverStatus()) ? receiverLog.getReceiverStatus().toString() : null);
+            preparedStatement.setString(5, Objects.nonNull(receiverLog.getHandleStatus()) ? receiverLog.getHandleStatus().toString() : null);
+            preparedStatement.setString(6, Objects.nonNull(receiverLog.getDataSourceType()) ? receiverLog.getDataSourceType().toString() : null);
             preparedStatement.setString(7, receiverLog.getDataSourceInfoJsonText());
             preparedStatement.setString(8, receiverLog.getReceiverDataContext());
             preparedStatement.setString(9, receiverLog.getHandleInfo());
             preparedStatement.setString(10, receiverLog.getOtherInfo());
+            preparedStatement.execute();
         }
     }
 

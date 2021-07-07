@@ -21,10 +21,8 @@ import java.util.Objects;
  * @author zaiji
  * @date 2021/06/17
  */
-
 @Log4j2
-@Component
-public final class DBInit implements ApplicationRunner {
+public final class DBInit {
 
     /**
      * 系统启动日志表
@@ -63,10 +61,6 @@ public final class DBInit implements ApplicationRunner {
      */
     private String port;
 
-    /**
-     * 应用名
-     */
-    @Value("${spring.application.name}")
     private String serviceName;
 
     private final Environment environment;
@@ -88,14 +82,14 @@ public final class DBInit implements ApplicationRunner {
     /**
      * 构造函数
      */
-    public DBInit(DerbyDao derbyDao, Environment environment) {
+    public DBInit(DerbyDao derbyDao, Environment environment, String serviceName) {
         this.derbyDao = derbyDao;
         this.environment = environment;
+        this.serviceName = serviceName;
         port = environment.getProperty("server.port");
     }
 
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run() throws Exception {
         log.info("****************************************************************************************************************************");
 
         StartLog lastStartLog = null;
@@ -123,7 +117,7 @@ public final class DBInit implements ApplicationRunner {
     /**
      * 初始化数据库，刷表
      */
-    private void initDB() throws Exception{
+    private void initDB() throws Exception {
         log.info("首次启动服务，初始化数据库！");
         derbyDao.doAnySQL(createStartLogTableSql);
         derbyDao.doAnySQL(createReceiverLogTableSql);
