@@ -10,6 +10,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
+/**
+ * 启动器自动配置类
+ *
+ * @author zaiji
+ * @date 2021/07/07
+ */
 
 @Log4j2
 @Configuration

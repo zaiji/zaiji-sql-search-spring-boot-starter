@@ -5,6 +5,13 @@ import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/**
+ * 启动器配置类
+ *
+ * @author zaiji
+ * @date 2021/07/07
+ */
+
 @Data
 @ToString
 @Component
