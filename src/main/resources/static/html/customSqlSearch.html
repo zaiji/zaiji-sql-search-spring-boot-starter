@@ -45,7 +45,12 @@
 </div>
 <div style="display: flex;height: calc(100% - 70px);width: 100%">
     <div style="flex: 1;height: 100%;background: lightgray">
-        <textarea id="sqlEditor">select * from WISVISION_RECEIVER_LOG</textarea>
+        <textarea id="sqlEditor">select
+  *
+from
+  WISVISION_RECEIVER_LOG OFFSET 0 ROWS
+FETCH NEXT
+  2 ROWS ONLY</textarea>
     </div>
     <div class="bg-dark" style="flex: 1;height: 100%;overflow: scroll;border-top: 4px solid #282a36;color: white;font-size: 18px;font-weight: 700;" id="divJson"></div>
 </div>

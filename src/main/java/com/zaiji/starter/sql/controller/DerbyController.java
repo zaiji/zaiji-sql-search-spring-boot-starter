@@ -1,12 +1,18 @@
 package com.zaiji.starter.sql.controller;
 
+import com.sun.org.apache.bcel.internal.ExceptionConst;
 import com.zaiji.starter.sql.dao.DerbyDao;
+import com.zaiji.starter.sql.entity.ReceiverLog;
+import com.zaiji.starter.sql.entity.Status;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Reader;
 import java.sql.Clob;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,24 +53,22 @@ public class DerbyController {
     @GetMapping("/doAnySQL")
     public List<Map<String, Object>> doAnySQL(String sql) throws Exception {
         final List<Map<String, Object>> maps = derbyDao.doAnySQL(sql);
-
-        for (Map<String, Object> map : maps) {
-            for (Map.Entry<String, Object> stringObjectEntry : map.entrySet()) {
-                final String key = stringObjectEntry.getKey();
-                final Object value = stringObjectEntry.getValue();
-                if (value instanceof Clob) {
-                    final Clob clob = (Clob) value;
-                    final Reader characterStream = clob.getCharacterStream();
-                    char[] tempChar = new char[1024];
-                    int i = 0;
-                    final StringBuffer stringBuffer = new StringBuffer();
-                    while ((i = characterStream.read(tempChar)) != -1) {
-                        stringBuffer.append(tempChar, 0, i);
-                    }
-                    map.put(key, stringBuffer.toString());
-                }
-            }
-        }
         return maps;
+    }
+
+    @GetMapping("/getRececiverLog")
+    @ResponseBody
+    public Map<String, Object> getReceiverLog(Status handleStatus, Status receiverStatus,
+                                              String messageContext, Date receiverStartTime,
+                                              Date receiverEndTime, Long handleStartTime,
+                                              Long handleEndTime,
+                                              Date completeStartTime, Date completeEndTime,
+                                              Integer pageNum, Integer pageSize) throws Exception {
+        final List<ReceiverLog> receiverLogs = derbyDao.getReceiverLogs(handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
+        final int count = derbyDao.getCount(handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
+        return new HashMap<String, Object>(4) {{
+            put("count", count);
+            put("data", receiverLogs);
+        }};
     }
 }

@@ -7,8 +7,10 @@ import com.zaiji.starter.sql.entity.Status;
 import com.zaiji.starter.sql.properties.SqlSearchProperties;
 import org.springframework.util.StringUtils;
 
+import java.io.Reader;
 import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 /**
  * derby数据库操作
@@ -99,7 +101,19 @@ public class DerbyDao {
                     for (int i = 1; i <= columnCount; i++) {
                         final Object object = resultSet.getObject(i);
                         final String columnName = metaData.getColumnName(i);
-                        map.put(columnName, object);
+                        if (object instanceof Clob) {
+                            final Clob clob = (Clob) object;
+                            final Reader characterStream = clob.getCharacterStream();
+                            char[] tempChar = new char[1024];
+                            int aaa = 0;
+                            final StringBuffer stringBuffer = new StringBuffer();
+                            while ((aaa = characterStream.read(tempChar)) != -1) {
+                                stringBuffer.append(tempChar, 0, aaa);
+                            }
+                            map.put(columnName, stringBuffer.toString());
+                        } else {
+                            map.put(columnName, object);
+                        }
                     }
                     results.add(map);
                 }
@@ -145,8 +159,23 @@ public class DerbyDao {
      * @return 所有的接入日志信息
      */
     public List<ReceiverLog> getReceiverLogs() throws Exception {
+        return getReceiverLogs(null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    /**
+     * 查询接入日志
+     *
+     * @return 所有的接入日志信息
+     */
+    public List<ReceiverLog> getReceiverLogs(Status handleStatus, Status receiverStatus,
+                                             String messageContext, Date receiverStartTime,
+                                             Date receiverEndTime, Long handleStartTime,
+                                             Long handleEndTime,
+                                             Date completeStartTime, Date completeEndTime,
+                                             Integer pageNum, Integer pageSize) throws Exception {
         try (final Connection connection = getConnection()) {
-            final PreparedStatement preparedStatement = connection.prepareStatement("select receiver_time,\n" +
+            //基础sql
+            String baseSQL = "select receiver_time,\n" +
                     "               processing_time,\n" +
                     "               completion_time,\n" +
                     "               receiver_status,\n" +
@@ -156,7 +185,11 @@ public class DerbyDao {
                     "               receiver_data_context,\n" +
                     "               handle_info,\n" +
                     "               other_info\n" +
-                    "        from wisvision_receiver_log");
+                    "        from wisvision_receiver_log";
+
+
+            //查询参数
+            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
 
             final ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -167,8 +200,8 @@ public class DerbyDao {
                 final long receiverTime = resultSet.getLong("RECEIVER_TIME");
                 final long processingTime = resultSet.getLong("PROCESSING_TIME");
                 final long completionTime = resultSet.getLong("COMPLETION_TIME");
-                final String receiverStatus = resultSet.getString("RECEIVER_STATUS");
-                final String handleStatus = resultSet.getString("HANDLE_STATUS");
+                final String receiverStatus1 = resultSet.getString("RECEIVER_STATUS");
+                final String handleStatus1 = resultSet.getString("HANDLE_STATUS");
                 final String dataSourceType = resultSet.getString("DATA_SOURCE_TYPE");
                 final String dataSourceInfoJsonText = resultSet.getString("DATA_SOURCE_INFO_JSON_TEXT");
                 final String receiverDataContext = resultSet.getString("RECEIVER_DATA_CONTEXT");
@@ -177,8 +210,8 @@ public class DerbyDao {
                 receiverLog.setReceiverTime(receiverTime)
                         .setProcessingTime(processingTime)
                         .setCompletionTime(completionTime)
-                        .setReceiverStatus(Status.getStatus(receiverStatus))
-                        .setHandleStatus(Status.getStatus(handleStatus))
+                        .setReceiverStatus(Status.getStatus(receiverStatus1))
+                        .setHandleStatus(Status.getStatus(handleStatus1))
                         .setDataSourceType(DataSourceType.getDataSourceType(dataSourceType))
                         .setDataSourceInfoJsonText(dataSourceInfoJsonText)
                         .setReceiverDataContext(receiverDataContext)
@@ -189,5 +222,106 @@ public class DerbyDao {
             }
             return results;
         }
+    }
+
+    /**
+     * 查询接入日志条数
+     *
+     * @return 条数
+     */
+    public int getCount(Status handleStatus, Status receiverStatus,
+                        String messageContext, Date receiverStartTime,
+                        Date receiverEndTime, Long handleStartTime,
+                        Long handleEndTime,
+                        Date completeStartTime, Date completeEndTime,
+                        Integer pageNum, Integer pageSize) throws Exception {
+        try (final Connection connection = getConnection()) {
+            //基础sql
+            String baseSQL = "select count(1)" +
+                    "        from wisvision_receiver_log";
+
+            //查询参数
+            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
+
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            resultSet.next();
+
+            final int anInt = resultSet.getInt("1");
+
+            return anInt;
+        }
+    }
+
+    private PreparedStatement getReceiverLogSearchPreapareStatement(Connection connection, String baseSQL,
+                                                                    Status handleStatus, Status receiverStatus,
+                                                                    String messageContext, Date receiverStartTime,
+                                                                    Date receiverEndTime, Long handleStartTime,
+                                                                    Long handleEndTime,
+                                                                    Date completeStartTime, Date completeEndTime,
+                                                                    Integer pageNum, Integer pageSize) throws Exception {
+        //查询参数
+        List<String> searchText = new LinkedList<>();
+        List<Object> searchParam = new LinkedList<>();
+        if (handleStatus != null) {
+            searchText.add("handle_status = ?");
+            searchParam.add(handleStatus.toString());
+        }
+        if (receiverStatus != null) {
+            searchText.add("receiver_status = ?");
+            searchParam.add(receiverStatus.toString());
+        }
+        if (messageContext != null) {
+            searchText.add("receiver_data_context like '%'||?||'%'");
+            searchParam.add(messageContext);
+        }
+        if (receiverStartTime != null) {
+            searchText.add("receiver_time >= ?");
+            searchParam.add(receiverStartTime.getTime());
+        }
+        if (receiverEndTime != null) {
+            searchText.add("receiver_time <= ?");
+            searchParam.add(receiverEndTime.getTime());
+        }
+        if (handleStartTime != null) {
+            searchText.add("processing_time >= ?");
+            searchParam.add(handleStartTime);
+        }
+        if (handleEndTime != null) {
+            searchText.add("processing_time <= ?");
+            searchParam.add(handleEndTime);
+        }
+        if (completeStartTime != null) {
+            searchText.add("completion_time >= ?");
+            searchParam.add(completeStartTime.getTime());
+        }
+        if (completeEndTime != null) {
+            searchText.add("completion_time <= ?");
+            searchParam.add(completeEndTime.getTime());
+        }
+
+        String whereSQL = searchText.size() > 0 ? " where " + String.join(" and ", searchText) : "";
+
+        String pageSQL = "";
+
+        if (pageNum != null && pageSize != null) {
+            pageSQL = " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ";
+            searchParam.add((pageNum - 1) * pageSize);
+            searchParam.add(pageSize);
+        }
+
+
+        final PreparedStatement preparedStatement = connection.prepareStatement(baseSQL + whereSQL + pageSQL);
+
+        for (int i = 1; i <= searchParam.size(); i++) {
+            if (searchParam.get(i - 1) instanceof String) {
+                preparedStatement.setString(i, (String) searchParam.get(i - 1));
+            } else if (searchParam.get(i - 1) instanceof Integer) {
+                preparedStatement.setInt(i, (int) searchParam.get(i - 1));
+            } else {
+                preparedStatement.setLong(i, (int) searchParam.get(i - 1));
+            }
+        }
+        return preparedStatement;
     }
 }
