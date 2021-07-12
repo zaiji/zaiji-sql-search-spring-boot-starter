@@ -189,7 +189,7 @@ public class DerbyDao {
 
 
             //查询参数
-            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
+            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize, true);
 
             final ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -240,7 +240,7 @@ public class DerbyDao {
                     "        from wisvision_receiver_log";
 
             //查询参数
-            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, null, null);
+            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, null, null, false);
 
             final ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -258,7 +258,7 @@ public class DerbyDao {
                                                                     Date receiverEndTime, Long handleStartTime,
                                                                     Long handleEndTime,
                                                                     Date completeStartTime, Date completeEndTime,
-                                                                    Integer pageNum, Integer pageSize) throws Exception {
+                                                                    Integer pageNum, Integer pageSize, boolean needOrder) throws Exception {
         //查询参数
         List<String> searchText = new LinkedList<>();
         List<Object> searchParam = new LinkedList<>();
@@ -279,7 +279,7 @@ public class DerbyDao {
             searchParam.add(receiverStartTime.getTime());
         }
         if (receiverEndTime != null) {
-            searchText.add("receiver_time <= ?");
+            searchText.add(" <= ?");
             searchParam.add(receiverEndTime.getTime());
         }
         if (handleStartTime != null) {
@@ -303,6 +303,12 @@ public class DerbyDao {
 
         String pageSQL = "";
 
+        String orderSQL = "";
+
+        if (needOrder) {
+            orderSQL = " order by receiver_time desc,completion_time desc ";
+        }
+
         if (pageNum != null && pageSize != null) {
             pageSQL = " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ";
             searchParam.add((pageNum - 1) * pageSize);
@@ -310,7 +316,7 @@ public class DerbyDao {
         }
 
 
-        final PreparedStatement preparedStatement = connection.prepareStatement(baseSQL + whereSQL + pageSQL);
+        final PreparedStatement preparedStatement = connection.prepareStatement(baseSQL + whereSQL + orderSQL + pageSQL);
 
         for (int i = 1; i <= searchParam.size(); i++) {
             if (searchParam.get(i - 1) instanceof String) {
