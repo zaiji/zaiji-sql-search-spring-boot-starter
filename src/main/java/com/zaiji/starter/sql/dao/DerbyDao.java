@@ -321,7 +321,6 @@ public class DerbyDao {
                 preparedStatement.setLong(i, (Long) searchParam.get(i - 1));
             }
         }
-        System.out.println(baseSQL + whereSQL + pageSQL);
         return preparedStatement;
     }
 }
