@@ -65,7 +65,7 @@ public class DerbyController {
                                               Date completeStartTime, Date completeEndTime,
                                               Integer pageNum, Integer pageSize) throws Exception {
         final List<ReceiverLog> receiverLogs = derbyDao.getReceiverLogs(handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
-        final int count = derbyDao.getCount(handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
+        final int count = derbyDao.getCount(handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime);
         return new HashMap<String, Object>(4) {{
             put("count", count);
             put("data", receiverLogs);

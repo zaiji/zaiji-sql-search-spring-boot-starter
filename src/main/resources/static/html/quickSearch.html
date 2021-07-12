@@ -30,43 +30,53 @@
         <div class="search-item-base">
             <div>处理状态：</div>
             <div>
-                <select id="" class="form-control" style="width: 150px;text-align: center;text-align-last: center;">
+                <select id="handleStatus" class="form-control" style="width: 150px;text-align: center;text-align-last: center;">
                     <option value="success">成功</option>
                     <option value="warn">警告</option>
                     <option value="error">失败</option>
+                    <option value="other">其他</option>
                 </select>
             </div>
         </div>
         <div class="search-item-base">
             <div>接收状态：</div>
             <div>
-                <select id="" class="form-control" style="width: 150px;text-align-last: center;">
+                <select id="receiverStatus" class="form-control" style="width: 150px;text-align-last: center;">
                     <option value="success">成功</option>
                     <option value="warn">警告</option>
                     <option value="error">失败</option>
+                    <option value="other">其他</option>
                 </select>
             </div>
         </div>
         <div class="search-item-base">
             <div>消息内容：</div>
-            <div><input type="text" class="form-control"></div>
+            <div><input id="messageContent" type="text" class="form-control"></div>
         </div>
         <div class="search-item-base">
             <div>接收时间：</div>
-            <div>
-                <input id="receiverTime" type="text" class="form-control" style="width: 330px;"/>
+            <div class="input-group">
+                <input id="receiverTime" type="text" class="form-control" style="width: 330px;">
+                <span class="input-group-btn">
+                        <button class="clearReceiverTime btn btn-warning" type="button">清空</button>
+                </span>
             </div>
         </div>
         <div class="search-item-base">
             <div>处理时长：</div>
             <div>
-                <input type="text" class="form-control"/>
+                >=<input id="processingStartTime" type="text" class="form-control" style="width: 75px;display: inline;"/><=<input id="processingEndTime" type="text" class="form-control" style="width: 75px;display: inline;"/>
             </div>
         </div>
         <div class="search-item-base">
             <div>处理完成时间：</div>
             <div>
-                <input id="completeTime" type="text" class="form-control" style="width: 330px;"/>
+                <div class="input-group">
+                    <input id="completeTime" type="text" class="form-control" style="width: 330px;">
+                    <span class="input-group-btn">
+                        <button class="clearCompleteTime btn btn-warning" type="button">清空</button>
+                    </span>
+                </div>
             </div>
         </div>
         <div class="search-item-base">
@@ -75,12 +85,26 @@
     </div>
     <div id="btnOpenSearchItem" style="background: rgba(0,0,0,0.1);position: absolute;width: 150px;height:25px;bottom: -25px;left: calc(50% - 75px);"></div>
 </div>
-<div style="height: 100%;overflow: scroll;">
+<div style="height: 100%;overflow: hidden;" id="tableBase">
     <table id="table" class="table"></table>
 </div>
 </body>
 <script>
     $(function () {
+
+        let dict = {
+            status: {
+                success: "成功",
+                warn: "警告",
+                error: "失败",
+                other: "其他"
+            }
+        }
+
+        let receiverStartTime = null,
+            receiverEndTime = null,
+            completeStartTime = null,
+            completeEndTime = null;
 
         $("#btnOpenSearchItem").click(function (evt) {
             evt.stopPropagation();
@@ -92,7 +116,19 @@
         });
 
         $("body").click(() => {
-            $("#searchItems").hide(250);
+            // $("#searchItems").hide(250);
+        });
+
+        $("#clearReceiverTime").click(function () {
+            $("#receiverTime").val("");
+            receiverStartTime = null;
+            receiverEndTime = null;
+        });
+
+        $("#clearCompleteTime").click(function () {
+            $("#completeTime").val("");
+            completeStartTime = null;
+            completeEndTime = null;
         });
 
         $("#receiverTime").daterangepicker({
@@ -114,6 +150,14 @@
                 firstDay: 1
             }
         });
+
+        $("#receiverTime").val("");
+
+        $("#receiverTime").on('apply.daterangepicker', (ev, picker) => {
+            receiverStartTime = picker.startDate._d;
+            receiverEndTime = picker.endDate._d;
+        })
+
         $("#completeTime").daterangepicker({
             //时间选择
             timePicker: true,
@@ -134,42 +178,91 @@
             }
         });
 
+        $("#completeTime").on('apply.daterangepicker', (ev, picker) => {
+            completeStartTime = picker.startDate._d;
+            completeEndTime = picker.endDate._d;
+        })
+
+        $("#completeTime").val("");
+
+        let height = $("#tableBase").height();
+        let width = $("#tableBase").width();
+
         $("#table").bootstrapTable({
             url: "/derby/getRececiverLog",
             method: "GET",
+            striped: true, //是否显示行间隔色
             pagination: true,
             pageNumber: 1,
             pageSize: 10,
             pageList: [10, 25, 50, 100],
             sidePagination: "server",
             queryParamsType: '',
-            queryParams: () => {
-                let param = {}
-                // $("#")
-
-
-                return {
-                    pageNum: 1,
-                    pageSize: 5
+            queryParams: (params) => {
+                let handleStatus = $("#handleStatus").val();
+                let receiverStatus = $("#receiverStatus").val();
+                let messageContext = $("#messageContent").val();
+                let handleStartTime = $("#processingStartTime").val();
+                let handleEndTime = $("#processingEndTime").val();
+                let param = {
+                    pageNum: params.pageNumber,
+                    pageSize: params.pageSize,
+                    handleStatus,
+                    receiverStatus,
+                    messageContext: ((!messageContext) || messageContext.trim() == "") ? null : messageContext,
+                    receiverStartTime: receiverStartTime != null ? receiverStartTime.toDate() : null,
+                    receiverEndTime: receiverEndTime != null ? receiverEndTime.toDate() : null,
+                    handleStartTime: !handleStartTime || handleStartTime.trim() == "" ? null : handleStartTime,
+                    handleEndTime: !handleEndTime || handleEndTime.trim() == "" ? null : handleEndTime,
+                    completeStartTime: completeStartTime != null ? completeStartTime.toDate() : null,
+                    completeEndTime: completeEndTime != null ? completeEndTime.toDate() : null
                 }
+
+                Object.keys(param).forEach(e => {
+                    if (param[e] == null) {
+                        delete param[e];
+                    }
+                });
+
+                return param;
             },
             responseHandler: function (data) {
-                return data.data
+                return {
+                    rows: data.data,
+                    total: data.count
+                };
             },
             columns: [
-                {field: "handleStatus", title: '处理状态'},
-                {field: 'receiverStatus', title: '接收状态'},
-                {field: 'receiverTime', title: '接入时间'},
+                {
+                    field: "handleStatus", title: '处理状态', formatter(val) {
+                        return dict.status[val];
+                    }
+                },
+                {
+                    field: 'receiverStatus', title: '接收状态', formatter(val) {
+                        return dict.status[val];
+                    }
+                },
+                {
+                    field: 'receiverTime', title: '接入时间', formatter(val) {
+                        return moment(val).format('YYYY-MM-DD HH:mm:ss');
+                    }
+                },
                 {field: 'processingTime', title: '消息处理时长（毫秒）'},
                 {field: 'handleInfo', title: '消息处理信息'},
-                {field: 'completionTime', title: '消息完成时间'},
+                {
+                    field: 'completionTime', title: '消息完成时间', formatter(val) {
+                        return moment(val).format('YYYY-MM-DD HH:mm:ss');
+                    }
+                },
                 {field: 'receiverDataContext', title: '接入消息'},
                 {field: 'dataSourceType', title: '数据源类型'},
                 {field: 'dataSourceInfoJsonText', title: '数据源信息json格式字符串'},
                 {field: 'dataSourceInfo', title: '数据源信息'},
                 {field: 'otherInfo', title: '其他信息'},
             ],
-            height: 800
+            height,
+            width
         });
 
         $("#searchBtn").click(() => {

@@ -233,15 +233,14 @@ public class DerbyDao {
                         String messageContext, Date receiverStartTime,
                         Date receiverEndTime, Long handleStartTime,
                         Long handleEndTime,
-                        Date completeStartTime, Date completeEndTime,
-                        Integer pageNum, Integer pageSize) throws Exception {
+                        Date completeStartTime, Date completeEndTime) throws Exception {
         try (final Connection connection = getConnection()) {
             //基础sql
             String baseSQL = "select count(1)" +
                     "        from wisvision_receiver_log";
 
             //查询参数
-            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, pageNum, pageSize);
+            final PreparedStatement preparedStatement = getReceiverLogSearchPreapareStatement(connection, baseSQL, handleStatus, receiverStatus, messageContext, receiverStartTime, receiverEndTime, handleStartTime, handleEndTime, completeStartTime, completeEndTime, null, null);
 
             final ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -271,7 +270,7 @@ public class DerbyDao {
             searchText.add("receiver_status = ?");
             searchParam.add(receiverStatus.toString());
         }
-        if (messageContext != null) {
+        if (StringUtils.hasText(messageContext)) {
             searchText.add("receiver_data_context like '%'||?||'%'");
             searchParam.add(messageContext);
         }
@@ -319,9 +318,10 @@ public class DerbyDao {
             } else if (searchParam.get(i - 1) instanceof Integer) {
                 preparedStatement.setInt(i, (int) searchParam.get(i - 1));
             } else {
-                preparedStatement.setLong(i, (int) searchParam.get(i - 1));
+                preparedStatement.setLong(i, (Long) searchParam.get(i - 1));
             }
         }
+        System.out.println(baseSQL + whereSQL + pageSQL);
         return preparedStatement;
     }
 }
